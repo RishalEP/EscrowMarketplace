@@ -1,4 +1,4 @@
-# Sample Hardhat Project
+# Escrow MarketPlace Contract
 
 This project demonstrates a smart contract-based escrow system for secure and automated payments in a peer-to-peer marketplace. The system should include features such as dispute resolution and multi-signature transactions.
 
