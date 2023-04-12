@@ -2,12 +2,21 @@
 
 pragma solidity 0.8.18;
 
+enum States {
+     PROPOSAL, 
+     APPROVED,
+     DISPUTE,
+     RESOLVE,
+     RELEASE
+    }
+
+
 contract Escrow {
     address public buyer;
     address public seller;
     address public arbiter;
     uint public amount;
-    bool public isDisputed;
+    States public state;
     mapping (address => bool) public approved;
     mapping (address => bool) public signed;
 
@@ -17,6 +26,7 @@ contract Escrow {
         amount = msg.value;
         seller = _seller;
         arbiter = _arbiter;
+        state = States.PROPOSAL;
     }
 
     modifier onlyParticipants {
@@ -35,40 +45,41 @@ contract Escrow {
     }
 
     function approve() external onlyParties {
+        require(state == States.PROPOSAL, "Transaction Should be in proposal state.");
         require(!approved[msg.sender], "The sender has already approved the transaction.");
         approved[msg.sender] = true;
-        if (approved[buyer] && approved[seller]) {
-            signed[arbiter] = true;
-            signed[buyer] = true;
-            signed[seller] = true;
+        if(approved[buyer] && approved[seller]){
+            state = States.APPROVED;
         }
     }
 
-    function sign() external onlyParticipants {
+    function signAndReleaseFund() external onlyParticipants {
         require(!signed[msg.sender], "The signer has already signed the transaction.");
+        require(state == States.APPROVED, "Transaction Should be in approved state.");
+        if(msg.sender == arbiter){
+            require((signed[buyer] && signed[seller]), "The buyer and the seller needs to be signed");
+        }
         signed[msg.sender] = true;
+        if (signed[buyer] && signed[seller] && signed[arbiter]) {
+            state = States.RELEASE;
+            releaseAmountTo(seller);
+        }
     }
 
     function dispute() external onlyParties {
-        require(!isApproved(), "The transaction has already been approved.");
-        isDisputed = true;
+        require(state == States.PROPOSAL, "The transaction state should be in proposal.");
+        signed[msg.sender] = false;
+        state = States.DISPUTE;
     }
 
     function resolve() external onlyArbitor {
-        require(isDisputed, "There is no dispute to resolve.");
-        signed[buyer] = false;
-        signed[seller] = false;
-        payable(buyer).transfer(amount);
+        require(state == States.DISPUTE, "The transaction state should be in dispute.");
+        state = States.RESOLVE;
+        releaseAmountTo(buyer);
     }
 
-    function release() external onlyParticipants {
-        require(signed[arbiter], "The arbiter has not signed the transaction.");
-        require(signed[buyer] && signed[seller], "The buyer and seller have not signed the transaction.");
-        require(isApproved(), "The transaction has not been approved yet.");
-        payable(seller).transfer(amount);
-    }
-
-    function isApproved() internal view returns(bool approval) {
-        approval = approved[buyer] && approved[seller];
+    function releaseAmountTo(address _to) internal onlyParticipants {
+        require(amount > 0, "No Amount to Release.");
+        payable(_to).transfer(amount);
     }
 }
