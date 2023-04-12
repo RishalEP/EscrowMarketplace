@@ -1,13 +1,10 @@
 # Sample Hardhat Project
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
+This project demonstrates a smart contract-based escrow system for secure and automated payments in a peer-to-peer marketplace. The system should include features such as dispute resolution and multi-signature transactions.
 
-Try running some of the following tasks:
+Steps to Deploy in Mumbai Polygon
 
-```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.js
-```
+1. Create env file from sample env. Make sure to keep minimum balance in admin wallet.
+2. Run `npx hardhat test` to run the test cases.
+3. Run `npx hardhat run .\scripts\1-deployEscrow.js --network mumbai` to deploy contract to Mumbai Polygon.
+4. Make sure to update the seller, arbitor and the amount in helper/arguments file
